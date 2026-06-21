@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة يوتيوب المطور - نظام الـ Gmail الحقيقي 📬</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* شاشة البوت المنبثقة للاستلام والتنبيه */
+        .bot-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            justify-content: center; align-items: center;
+        }
+        .bot-card {
+            background: #1f1f1f;
+            border: 2px solid #00ffcc;
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%; max-width: 450px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.4);
+        }
+        .bot-header {
+            display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 15px;
+        }
+        .bot-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #00ffcc; background: #333; }
+        .bot-name { color: #00ffcc; font-weight: bold; font-size: 18px; }
+        .status-box { background: #111; padding: 15px; border-radius: 8px; margin: 15px 0; color: #ffc107; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <header id="mainHeader">
+        <div class="logo-container" onclick="showAllVideos()">
+            <div class="logo-icon-premium"></div>
+            <div class="logo-text"><span>يوتيوب المطور</span><span class="palestine-badge">فلسطين قضيتنا 🇵🇸</span></div>
+        </div>
+        <div class="search-container">
+            <input type="text" id="globalSearchInput" class="search-bar" placeholder="البحث عن فيديوهات...">
+            <button class="search-btn" onclick="handleGlobalSearch()">بحث</button>
+        </div>
+        <div class="header-controls" id="headerControlsZone"></div>
+    </header>
+
+    <div class="page" id="loginPage">
+        <h2>🔑 تسجيل الدخول بالبريد الإلكتروني الحقيقي</h2>
+        <p style="color: #aaa; font-size: 14px;">اكتب إيميلك الحقيقي، وسيقوم بوت النظام بإرسال كود التحقق إلى صندوق بريدك الـ Gmail فوراً!</p>
+        
+        <div id="emailStep">
+            <input type="email" id="authEmail" placeholder="اكتب إيميلك الحقيقي هنا..." style="direction: ltr; text-align: right;">
+            <button class="main-btn" style="background: #ff0000;" onclick="sendVerificationToGmail()">إرسال كود التحقق لبريد Gmail الفعلي ←</button>
+        </div>
+
+        <div id="codeStep" style="display: none;">
+            <p style="color: #00ffcc; font-size: 13px;">📥 اذهب إلى تطبيق Gmail وافتح الرسالة الجديدة القادمة من البوت لنسخ الكود!</p>
+            <input type="text" id="authCode" placeholder="أدخل كود الـ 6 أرقام الموجود في إيميلك" style="text-align: center; letter-spacing: 5px;">
+            <button class="main-btn" style="background: #007a3d;" onclick="verifyAuthCode()">تأكيد الكود والانتقال للبروفايل</button>
+        </div>
+
+        <div id="profileSetupStep" style="display: none; border-top: 1px dashed #444; padding-top: 20px;">
+            <p style="color: #00ffcc; font-size: 14px; font-weight: bold;">🔐 تم تأكيد الكود من الـ Gmail بنجاح! جهّز بروفايلك:</p>
+            <input type="text" id="customPlatformName" placeholder="اكتب اسم قناتك / اسم الشهرة">
+            <label for="profileImgFile" class="file-label" id="profileLabel">📸 اختر صورة البروفايل الشخصية</label>
+            <input type="file" id="profileImgFile" accept="image/*" style="display:none;" onchange="handleProfileImageUpload()">
+            <button class="main-btn" style="background: #ff0000;" onclick="finalizeRegistration()">دخول وتفعيل الميزات الفورية ←</button>
+        </div>
+    </div>
+
+    <div class="bot-modal-overlay" id="botModal">
+        <div class="bot-card">
+            <div class="bot-header">
+                <img class="bot-avatar" src="https://cdn-icons-png.flaticon.com/512/4712/4712104.png" alt="Bot">
+                <div class="bot-name">🤖 بوت إدارة يوتيوب المطور</div>
+            </div>
+            <div class="status-box" id="botStatusText">
+                ⏳ جاري تشفير وتوليد كود التحقق السري وإرساله لـ بريدك الفعلي... استني ثواني ولا تقفل الصفحة!
+            </div>
+            <button class="main-btn" id="botActionBtn" style="background: #555; display:none;" onclick="hideBotAndOpenCodeStep()">حسنًا، فتح حقل الكود 🚀</button>
+        </div>
+    </div>
+
+    <div class="page" id="viewPage">
+        <div class="section-title">
+            <span id="mainSectionTitle">📺 الفيديوهات المقترحة</span>
+            <button id="uploadNavBtn" style="width:auto; padding: 5px 15px; display: none;" class="main-btn" onclick="goToPage('uploadPage')">+ نشر فيديو جديد</button>
+        </div>
+        <div class="videos-grid" id="longVideosContainer"></div>
+    </div>
+
+    <script>
+        let currentUser = { loggedIn: false, name: "زائر", email: "", img: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
+        let typedEmail = "";
+        const API_URL = "http://localhost:3000/api";
+
+        window.onload = function() {
+            goToPage('viewPage');
+            fetchVideosFromServer();
+        };
+
+        function goToPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(pageId).classList.add('active-page');
+        }
+
+        // إرسال طلب السيرفر لتوجيه إيميل حقيقي للمستخدم
+        function sendVerificationToGmail() {
+            typedEmail = document.getElementById('authEmail').value.trim();
+            if(!typedEmail) return alert("الرجاء كتابة البريد الإلكتروني أولاً!");
+
+            // إظهار نافذة البوت المنبثقة لإخبار المستخدم بالانتظار
+            document.getElementById('botStatusText').innerHTML = "⏳ جاري توجيه رسالة رسمية وصاروخية إلى الـ Gmail الخاص بك الحين... انتظر لحظة!";
+            document.getElementById('botActionBtn').style.display = 'none';
+            document.getElementById('botModal').style.display = 'flex';
+
+            fetch(`${API_URL}/auth/send-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: typedEmail })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    // إذا أرسل السيرفر الإيميل بنجاح، البوت يغير كلامه ويطلب منه الذهاب لبريده
+                    document.getElementById('botStatusText').innerHTML = `🏁 <b>تم الإرسال بنجاح!</b><br>بوت الشركة طيّر الكود الحين لبريدك الحقيقي <span style="color:#00ffcc;">(${typedEmail})</span>.<br>روح الحين افتح تطبيق الـ Gmail وانسخ الكود السري وجيبه هنا!`;
+                    document.getElementById('botActionBtn').style.display = 'block';
+                    document.getElementById('botActionBtn').style.background = '#007a3d';
+                    
+                    // إذا كان السيرفر في وضع المحاكاة الاحتياطية يقوم بتعبئة الكود تلقائياً لراحتك
+                    if(data.code) {
+                        document.getElementById('authCode').value = data.code;
+                    }
+                }
+            });
+        }
+
+        function hideBotAndOpenCodeStep() {
+            document.getElementById('botModal').style.display = 'none';
+            document.getElementById('emailStep').style.display = 'none';
+            document.getElementById('codeStep').style.display = 'block';
+        }
+
+        function verifyAuthCode() {
+            const code = document.getElementById('authCode').value.trim();
+            if(!code) return alert("الرجاء إدخال كود التحقق!");
+
+            fetch(`${API_URL}/auth/verify-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: typedEmail, code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('codeStep').style.display = 'none';
+                    document.getElementById('profileSetupStep').style.display = 'block';
+                } else {
+                    alert("❌ الكود الذي أدخلته غير صحيح أو انتهت صلاحيته بالـ Gmail!");
+                }
+            });
+        }
+
+        // باقي دوال معالجة الملفات وحفظ الحساب...
+        let base64ProfileImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        function handleProfileImageUpload() {
+            const file = document.getElementById('profileImgFile').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) { base64ProfileImg = e.target.result; document.getElementById('profileLabel').innerText = "✅ تم حفظ الصورة!"; };
+            reader.readAsDataURL(file);
+        }
+
+        function finalizeRegistration() {
+            const platformName = document.getElementById('customPlatformName').value.trim();
+            if(!platformName) return alert("الرجاء كتابة اسم قناتك!");
+            currentUser = { loggedIn: true, name: platformName, email: typedEmail, img: base64ProfileImg };
+            localStorage.setItem('yt_dev_user_v11', JSON.stringify(currentUser));
+            location.reload();
+        }
+
+        function fetchVideosFromServer() {
+            fetch(`${API_URL}/videos`).then(res => res.json()).then(data => {
+                const container = document.getElementById('longVideosContainer');
+                container.innerHTML = '';
+                data.forEach(video => {
+                    container.innerHTML += `<div class="video-card"><h3>${video.title}</h3><p>بواسطة: ${video.authorName}</p></div>`;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

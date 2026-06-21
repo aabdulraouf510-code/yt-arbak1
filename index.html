@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة يوتيوب المطور - نظام كود التحقق 🚀</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header id="mainHeader">
+        <div class="logo-container" onclick="showAllVideos()">
+            <div class="logo-icon-premium"></div>
+            <div class="logo-text">
+                <span>يوتيوب المطور</span>
+                <span class="palestine-badge">فلسطين قضيتنا 🇵🇸</span>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="globalSearchInput" class="search-bar" placeholder="البحث عن فيديوهات...">
+            <button class="search-btn" onclick="handleGlobalSearch()">بحث</button>
+        </div>
+
+        <div class="header-controls" id="headerControlsZone"></div>
+    </header>
+
+    <div class="page" id="loginPage">
+        <h3 style="color:#007a3d; margin:0;">Palestine Our Cause | فلسطين قضيتنا 🇵🇸</h3>
+        <h2>🔑 تسجيل الدخول الآمن عبر البريد الإلكتروني</h2>
+        <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">أدخل إيميلك لتصلك رسالة تحتوي على كود التحقق الفوري لدخول المنصة</p>
+        
+        <div id="emailStep">
+            <input type="email" id="authEmail" placeholder="example@gmail.com" style="direction: ltr; text-align: right;">
+            <button class="main-btn" style="background: #4285F4;" onclick="sendVerificationCode()">طلب كود التحقق الفوري ←</button>
+            <br><br>
+            <button class="main-btn" style="background: #222; border: 1px solid #444;" onclick="enterAsGuest()">👀 تصفح المنصة كزائر فقط</button>
+        </div>
+
+        <div id="codeStep" style="display: none;">
+            <p style="color: #ffc107; font-size: 13px;">✅ أرسلنا كود التحقق إلى بريدك! (شاهد شاشة كونسول السيرفر في VS Code)</p>
+            <input type="text" id="authCode" placeholder="أدخل الكود المكون من 6 أرقام" style="text-align: center; letter-spacing: 5px;">
+            <button class="main-btn" style="background: #007a3d;" onclick="verifyAuthCode()">تأكيد الكود والانتقال للبروفايل</button>
+        </div>
+
+        <div id="profileSetupStep" style="display: none; border-top: 1px dashed #444; padding-top: 20px;">
+            <p style="color: #00ffcc; font-size: 14px; font-weight: bold;">🔐 تم التحقق من هويتك بنجاح! جهّز بروفايلك الأسطوري الآن:</p>
+            
+            <input type="text" id="customPlatformName" placeholder="اكتب اسم قناتك / اسم الشهرة">
+            
+            <label for="profileImgFile" class="file-label" id="profileLabel">📸 اختر صورة البروفايل الشخصية</label>
+            <input type="file" id="profileImgFile" accept="image/*" style="display:none;" onchange="handleProfileImageUpload()">
+            
+            <button class="main-btn" style="background: #ff0000;" onclick="finalizeRegistration()">دخول المنصة وتفعيل الميزات الفورية ←</button>
+        </div>
+    </div>
+
+    <div class="page" id="uploadPage">
+        <h2>🎬 نشر محتوى مرئي جديد</h2>
+        <input type="text" id="videoTitle" placeholder="عنوان الفيديو">
+        <textarea id="videoDesc" placeholder="تفاصيل ووصف الفيديو..." rows="2"></textarea>
+        
+        <select id="videoType">
+            <option value="long">📺 فيديو طويل (الشبكة العريضة)</option>
+            <option value="short">📱 فيديو قصير (Shorts)</option>
+        </select>
+
+        <label for="thumbFile" class="file-label" id="thumbLabel">🖼️ اختر صورة مصغرة (Thumbnail) (اختياري)</label>
+        <input type="file" id="thumbFile" accept="image/*" style="display:none;" onchange="saveThumbnailImage()">
+
+        <label for="videoFile" class="file-label" id="videoLabel">📁 اختر ملف الفيديو الأصلي</label>
+        <input type="file" id="videoFile" accept="video/*" style="display:none;" onchange="handleVideoSelection()">
+        
+        <button class="main-btn" onclick="startPublishing()">ابدأ النشر الفوري الصاروخي</button>
+        
+        <div class="progress-zone" id="progressZone">
+            <div class="progress-bar" id="progressBar"></div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+        <br><br>
+        <button style="background:#333;" class="main-btn" onclick="goToPage('viewPage')">← العودة للمنصة</button>
+    </div>
+
+    <div class="page" id="viewPage">
+        <div class="section-title">
+            <span id="mainSectionTitle">📺 الفيديوهات المقترحة (الشبكة العريضة)</span>
+            <button id="uploadNavBtn" style="width:auto; padding: 5px 15px; display: none;" class="main-btn" onclick="goToPage('uploadPage')">+ نشر فيديو جديد</button>
+        </div>
+        <div class="videos-grid" id="longVideosContainer"></div>
+
+        <div class="section-title" id="shortsTitleSection">
+            <span>📱 فيديوهات شورتس القصيرة (Shorts)</span>
+        </div>
+        <div class="shorts-grid" id="shortsContainer"></div>
+    </div>
+
+    <div class="page" id="authorProfilePage">
+        <div class="author-profile-header">
+            <img id="authorViewImg" src="" alt="صورة الناشر">
+            <div class="author-view-details">
+                <h1 id="authorViewName">اسم الناشر</h1>
+                <p id="authorViewSubscribers">🚨 0 مشترك</p>
+                <button class="main-btn" style="width: auto; padding: 8px 25px;" id="authorViewSubBtn">إشتراك في القناة</button>
+            </div>
+            <button class="main-btn" style="width:auto; background:#333; margin-right: auto;" onclick="goToPage('viewPage')">← العودة للمنصة</button>
+        </div>
+        <hr style="border-color: #2d2d2d; margin: 20px 0;">
+        <h3>🎬 الفيديوهات التي نشرها هذا الحساب الفردي:</h3>
+        <div class="videos-grid" id="authorVideosContainer"></div>
+    </div>
+
+    <script>
+        let currentUser = { loggedIn: false, name: "زائر", email: "", img: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
+        let activeVideoFile = null;
+        let base64Thumb = "";
+        let base64ProfileImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png"; // صورة افتراضية
+        let globalVideosData = [];
+        let typedEmail = "";
+        const API_URL = "http://localhost:3000/api";
+
+        window.onload = function() {
+            const savedUser = localStorage.getItem('yt_dev_user_v9');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+            updateHeaderUI();
+            goToPage('viewPage');
+            fetchVideosFromServer();
+        };
+
+        function updateHeaderUI() {
+            const controls = document.getElementById('headerControlsZone');
+            const uploadBtn = document.getElementById('uploadNavBtn');
+            
+            if (currentUser.loggedIn) {
+                uploadBtn.style.display = "block";
+                controls.innerHTML = `
+                    <div class="user-badge">
+                        <span>${currentUser.name}</span>
+                        <img src="${currentUser.img}" alt="بروفايل">
+                    </div>
+                    <button class="logout-btn" onclick="handleLogout()">تسجيل الخروج</button>
+                `;
+            } else {
+                uploadBtn.style.display = "none";
+                controls.innerHTML = `
+                    <button class="main-btn" style="width:auto; padding:5px 15px; background:#4285F4;" onclick="goToPage('loginPage')">🔑 تسجيل الدخول</button>
+                `;
+            }
+        }
+
+        function goToPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(pageId).classList.add('active-page');
+        }
+
+        // 1. طلب إرسال كود التحقق
+        function sendVerificationCode() {
+            typedEmail = document.getElementById('authEmail').value.trim();
+            if(!typedEmail) return alert("الرجاء كتابة البريد الإلكتروني أولاً!");
+
+            fetch(`${API_URL}/auth/send-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: typedEmail })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('emailStep').style.display = 'none';
+                    document.getElementById('codeStep').style.display = 'block';
+                }
+            });
+        }
+
+        // 2. التحقق من صحة الكود السري
+        function verifyAuthCode() {
+            const code = document.getElementById('authCode').value.trim();
+            if(!code) return alert("الرجاء إدخال كود التحقق!");
+
+            fetch(`${API_URL}/auth/verify-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: typedEmail, code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('codeStep').style.display = 'none';
+                    document.getElementById('profileSetupStep').style.display = 'block';
+                } else {
+                    alert("❌ الكود الذي أدخلته غير صحيح! حاول مرة أخرى.");
+                }
+            });
+        }
+
+        // معالجة وحفظ صورة البروفايل محلياً وتحويلها لـ Base64
+        function handleProfileImageUpload() {
+            const file = document.getElementById('profileImgFile').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64ProfileImg = e.target.result;
+                document.getElementById('profileLabel').innerText = "✅ تم تحميل وحفظ الصورة بنجاح!";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 3. الخطوة النهائية: حفظ الاسم والصورة ودخول المنصة
+        function finalizeRegistration() {
+            const platformName = document.getElementById('customPlatformName').value.trim();
+            if(!platformName) return alert("الرجاء كتابة اسم قناتك لإكمال الإعداد!");
+
+            currentUser = {
+                loggedIn: true,
+                name: platformName,
+                email: typedEmail,
+                img: base64ProfileImg
+            };
+
+            localStorage.setItem('yt_dev_user_v9', JSON.stringify(currentUser));
+            updateHeaderUI();
+            goToPage('viewPage');
+            fetchVideosFromServer();
+            alert(`🎉 مرحباً بك يا ${currentUser.name}! تم تفعيل حسابك بالكامل عبر الكود.`);
+        }
+
+        function enterAsGuest() {
+            currentUser = { loggedIn: false, name: "زائر", email: "", img: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
+            localStorage.removeItem('yt_dev_user_v9');
+            updateHeaderUI();
+            goToPage('viewPage');
+            fetchVideosFromServer();
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('yt_dev_user_v9');
+            location.reload();
+        }
+
+        function saveThumbnailImage() {
+            const file = document.getElementById('thumbFile').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Thumb = e.target.result;
+                document.getElementById('thumbLabel').innerText = "✅ تم تجهيز الصورة المصغرة!";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleVideoSelection() {
+            const file = document.getElementById('videoFile').files[0];
+            if(!file) return;
+            activeVideoFile = file;
+            document.getElementById('videoLabel').innerText = "✅ تم ربط ملف الفيديو بنجاح واحترافية";
+        }
+
+        function startPublishing() {
+            if(!currentUser.loggedIn) return alert("خطأ أمني: يجب تسجيل الدخول لرفع ملفات.");
+            
+            const title = document.getElementById('videoTitle').value.trim();
+            const desc = document.getElementById('videoDesc').value.trim();
+            const type = document.getElementById('videoType').value;
+
+            if(!title || !activeVideoFile) return alert("الرجاء إدخال العنوان واختيار ملف الفيديو أولاً!");
+
+            const progressZone = document.getElementById('progressZone');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressZone.style.display = 'block';
+            let count = 0;
+
+            const interval = setInterval(() => {
+                count += 5;
+                progressBar.style.width = count + '%';
+                progressText.innerText = `جاري فحص المحتوى والأمان ذكياً... ${count}%`;
+
+                if (count >= 100) {
+                    clearInterval(interval);
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const payload = {
+                            title: title,
+                            description: desc || "لا يوجد وصف.",
+                            videoUrl: e.target.result, 
+                            thumbnail: base64Thumb || "https://img.freepik.com/free-vector/video-player-template-with-flat-design_23-2147847427.jpg",
+                            type: type,
+                            authorName: currentUser.name,
+                            authorImg: currentUser.img
+                        };
+
+                        fetch(`${API_URL}/videos`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(res => {
+                            if (res.status === 403) {
+                                alert("🛑 تم رصد رفع فيديو مخالف (محتوى أعلام محظورة)! تم إعطاء الحساب باند فوري وتطهير المنصة.");
+                                handleLogout();
+                                throw new Error("باند");
+                            }
+                            return res.json();
+                        })
+                        .then(() => {
+                            document.getElementById('videoTitle').value = '';
+                            document.getElementById('videoDesc').value = '';
+                            activeVideoFile = null; base64Thumb = "";
+                            document.getElementById('videoLabel').innerText = "📁 اختر ملف الفيديو الاصلي";
+                            progressZone.style.display = 'none';
+                            goToPage('viewPage');
+                            fetchVideosFromServer();
+                        })
+                        .catch(() => progressZone.style.display = 'none');
+                    };
+                    reader.readAsDataURL(activeVideoFile);
+                }
+            }, 30);
+        }
+
+        function fetchVideosFromServer(searchFilter = "") {
+            fetch(`${API_URL}/videos`)
+            .then(res => res.json())
+            .then(data => {
+                globalVideosData = data;
+                renderPlatformData(data, searchFilter);
+            })
+            .catch(() => console.log("خطأ بالسيرفر."));
+        }
+
+        function sendAction(videoId, actionType, isProfilePage = false) {
+            if (!currentUser.loggedIn) {
+                alert("🔒 عذراً يا غالي! أنت تتصفح كزائر الحين. يجب عليك تسجيل الدخول أولاً لتتمكن من عمل لايك، ديسلايك أو اشتراك بالقنوات.");
+                return;
+            }
+
+            fetch(`${API_URL}/videos/${videoId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ actionType: actionType, user: currentUser.name })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.alert) alert(data.alert);
+                if(isProfilePage) {
+                    const authorName = document.getElementById('authorViewName').innerText;
+                    viewAuthorProfile(authorName);
+                } else {
+                    fetchVideosFromServer();
+                }
+            });
+        }
+
+        function addComment(videoId, isProfilePage = false) {
+            if (!currentUser.loggedIn) {
+                alert("🔒 التعليقات مقفلة للزوار! سجل دخولك لتشارك برأيك في التعليقات العلنّية.");
+                return;
+            }
+
+            const input = document.getElementById(`comment_input_${videoId}`);
+            const text = input.value.trim();
+            if(!text) return;
+
+            fetch(`${API_URL}/videos/${videoId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    actionType: 'comment',
+                    commentText: text,
+                    authorName: currentUser.name
+                })
+            })
+            .then(res => res.json())
+            .then(() => {
+                input.value = '';
+                if(isProfilePage) {
+                    const authorName = document.getElementById('authorViewName').innerText;
+                    viewAuthorProfile(authorName);
+                } else {
+                    fetchVideosFromServer();
+                }
+            });
+        }
+
+        function shareVideoLink(videoUrl) {
+            navigator.clipboard.writeText(videoUrl);
+            alert("🔗 تم نسخ رابط تشغيل الفيديو بنجاح ومشاركته جاهزة!");
+        }
+
+        function initAndPlayActualVideo(overlayId, videoId) {
+            document.getElementById(overlayId).style.display = 'none';
+            document.getElementById(videoId).play();
+        }
+
+        function viewAuthorProfile(authorName) {
+            goToPage('authorProfilePage');
+            const authorVideos = globalVideosData.filter(v => v.authorName === authorName);
+            let sampleVideo = authorVideos[0] || { authorImg: "https://cdn-icons-png.flaticon.com/512/149/149071.png", subscribers: 0, id: 0 };
+            
+            document.getElementById('authorViewName').innerText = authorName;
+            document.getElementById('authorViewImg').src = sampleVideo.authorImg;
+            document.getElementById('authorViewSubscribers').innerText = `🚨 ${sampleVideo.subscribers || 0} مشترك`;
+            
+            document.getElementById('authorViewSubBtn').onclick = function() {
+                if(sampleVideo.id) {
+                    sendAction(sampleVideo.id, 'subscribe', true);
+                } else {
+                    alert("لا يمكن الاشتراك بحساب دون فيديوهات نشطة!");
+                }
+            };
+
+            const container = document.getElementById('authorVideosContainer');
+            container.innerHTML = '';
+
+            if(authorVideos.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; padding:20px;">هذا الحساب لم ينشر أي مادة مرئية حتى الآن.</p>';
+                return;
+            }
+
+            authorVideos.forEach(video => {
+                let commentsHTML = '';
+                (video.commentsList || []).forEach(c => {
+                    commentsHTML += `<p style="margin:4px 0; font-size:13px;"><strong>@${c.author}:</strong> ${c.text}</p>`;
+                });
+
+                container.innerHTML += `
+                    <div class="video-card">
+                        <div class="video-wrapper">
+                            <video id="p_vid_${video.id}" controls preload="auto">
+                                <source src="${video.videoUrl}">
+                            </video>
+                        </div>
+                        <div class="video-info-block">
+                            <div class="video-text-details">
+                                <h3>${video.title}</h3>
+                                <p style="font-size:12px; color:#888;">${video.description}</p>
+                            </div>
+                        </div>
+                        <div class="actions-bar">
+                            <button class="action-btn" onclick="sendAction(${video.id}, 'like', true)">👍 ${video.likes || 0}</button>
+                            <button class="action-btn" onclick="sendAction(${video.id}, 'dislike', true)">👎 ${video.dislikes || 0}</button>
+                            <button class="action-btn" style="background:#333;" onclick="shareVideoLink('${video.videoUrl}')">🔗 مشاركة</button>
+                        </div>
+                        <div class="comments-section">
+                            <div class="comment-input-zone">
+                                <input type="text" id="comment_input_${video.id}" placeholder="اكتب تعليقاً...">
+                                <button onclick="addComment(${video.id}, true)">تعليق</button>
+                            </div>
+                            <div class="comments-list">${commentsHTML || '<span style="color:#555;font-size:12px;">لا تعليقات</span>'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function handleGlobalSearch() {
+            const query = document.getElementById('globalSearchInput').value.toLowerCase().trim();
+            fetchVideosFromServer(query);
+        }
+
+        function showAllVideos() {
+            document.getElementById('globalSearchInput').value = '';
+            fetchVideosFromServer();
+        }
+
+        function renderPlatformData(localDb, searchFilter = "") {
+            const longContainer = document.getElementById('longVideosContainer');
+            const shortsContainer = document.getElementById('shortsContainer');
+            longContainer.innerHTML = '';
+            shortsContainer.innerHTML = '';
+
+            if(searchFilter) {
+                document.getElementById('mainSectionTitle').innerText = `🔍 نتائج البحث عن: "${searchFilter}"`;
+                document.getElementById('shortsTitleSection').style.display = 'none';
+                shortsContainer.style.display = 'none';
+            } else {
+                document.getElementById('mainSectionTitle').innerText = "📺 الفيديوهات المقترحة (الشبكة العريضة)";
+                document.getElementById('shortsTitleSection').style.display = 'flex';
+                shortsContainer.style.display = 'grid';
+            }
+
+            localDb.forEach(video => {
+                if(searchFilter && !video.title.toLowerCase().includes(searchFilter) && !video.description.toLowerCase().includes(searchFilter)) {
+                    return; 
+                }
+
+                let commentsHTML = '';
+                (video.commentsList || []).forEach(c => {
+                    commentsHTML += `<p style="margin:4px 0; font-size:13px;"><strong>@${c.author}:</strong> ${c.text}</p>`;
+                });
+
+                const cardHTML = `
+                    <div class="video-card">
+                        <div class="video-wrapper">
+                            <div class="custom-poster-overlay" id="cover_${video.id}" onclick="initAndPlayActualVideo('cover_${video.id}', 'vid_${video.id}')">
+                                <img src="${video.thumbnail}" alt="thumbnail">
+                                <div class="play-icon-center">▶ تشغيل الآن</div>
+                            </div>
+                            <video id="vid_${video.id}" controls preload="auto">
+                                <source src="${video.videoUrl}">
+                            </video>
+                        </div>
+                        <div class="video-info-block">
+                            <img class="author-img" src="${video.authorImg}" alt="avatar" onclick="viewAuthorProfile('${video.authorName}')" style="cursor:pointer;">
+                            <div class="video-text-details">
+                                <h3 onclick="viewAuthorProfile('${video.authorName}')" style="cursor:pointer;">${video.title}</h3>
+                                <p style="color:#aaa; font-size:13px; margin:2px 0;">الناشر: <span onclick="viewAuthorProfile('${video.authorName}')" style="text-decoration:underline; color:#ff0000; font-weight:bold; cursor:pointer;">${video.authorName}</span> • <span style="color:#007a3d;">${video.subscribers || 0} مشترك</span></p>
+                                <p style="font-size:12px; color:#888;">${video.description}</p>
+                            </div>
+                        </div>
+                        <div class="actions-bar">
+                            <button class="action-btn" onclick="sendAction(${video.id}, 'like', false)">👍 ${video.likes || 0}</button>
+                            <button class="action-btn" onclick="sendAction(${video.id}, 'dislike', false)">👎 ${video.dislikes || 0}</button>
+                            <button class="action-btn" style="background:#007a3d;" onclick="sendAction(${video.id}, 'subscribe', false)">🚨 اشتراك</button>
+                            <button class="action-btn" style="background:#333;" onclick="shareVideoLink('${video.videoUrl}')">🔗 مشاركة</button>
+                        </div>
+                        <div class="comments-section">
+                            <div class="comment-input-zone">
+                                <input type="text" id="comment_input_${video.id}" placeholder="اكتب تعليقاً علنياً...">
+                                <button onclick="addComment(${video.id}, false)">تعليق</button>
+                            </div>
+                            <div class="comments-list">${commentsHTML || '<span style="color:#555;font-size:12px;">لا توجد تعليقات، كن أول المعلقين!</span>'}</div>
+                        </div>
+                    </div>
+                `;
+
+                if(video.type === 'short' && !searchFilter) {
+                    shortsContainer.innerHTML += `
+                        <div class="short-card">
+                            <video loop muted autoplay controls>
+                                <source src="${video.videoUrl}">
+                            </video>
+                            <div class="short-overlay">
+                                <h4>${video.title}</h4>
+                                <p style="font-size:11px; color:#ff0000; cursor:pointer;" onclick="viewAuthorProfile('${video.authorName}')">@${video.authorName}</p>
+                                <button class="action-btn" onclick="shareVideoLink('${video.videoUrl}')" style="padding:2px 8px; font-size:11px;">🔗 مشاركة</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    longContainer.innerHTML += cardHTML;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
